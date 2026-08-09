@@ -136,6 +136,14 @@ def extract_metrics(outfile: Path) -> tuple:
     try:
         with open(outfile) as f:
             d = json.load(f)
+        # llama-benchy 0.4+ format: benchmarks[0].tg_throughput.mean
+        benchmarks = d.get("benchmarks", [])
+        if benchmarks:
+            b = benchmarks[0]
+            tg = b.get("tg_throughput", {}).get("mean", "N/A")
+            pp = b.get("pp_throughput", {}).get("mean", "N/A")
+            return (str(tg), str(pp))
+        # Fallback: older format with results[] or top-level keys
         if isinstance(d, list):
             r = d[0]
         elif "results" in d:

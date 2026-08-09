@@ -3,9 +3,13 @@
 import argparse
 from pathlib import Path
 
-from .config import SCENARIOS, validate_models
+from .config import SCENARIOS, extract_draft_n, validate_models
 from .reporter import generate_report
-from .runner import run_benchmarks
+from .runner import extract_metrics, run_benchmarks
+from .server import validate_models_on_server
+
+# Build a lookup from scenario label to Scenario
+_SCENARIO_MAP = {s.label: s for s in SCENARIOS}
 
 
 def main():
@@ -23,17 +27,71 @@ def main():
     )
     parser.add_argument(
         "--models",
-        required=True,
         help="Comma-separated list of model names (at least 2 required)",
+    )
+    parser.add_argument(
+        "--results-dir",
+        help="Path to existing results directory (use with --skip-bench to regenerate reports only)",
+    )
+    parser.add_argument(
+        "--skip-bench",
+        action="store_true",
+        help="Skip benchmark inference; rebuild summary from JSON files and regenerate reports",
     )
 
     args = parser.parse_args()
+
+    # Skip-bench mode: rebuild summary from existing JSON results
+    if args.skip_bench:
+        if not args.results_dir:
+            raise SystemExit("[fail] --results-dir is required when using --skip-bench")
+        results_dir = Path(args.results_dir)
+        summary_csv = results_dir / "summary.csv"
+
+        # Rebuild summary.csv from JSON result files
+        print(f"[bench] Rebuilding summary from JSON results in: {results_dir}")
+        header = (
+            "model,draft_n,scenario,pp,tg,depth,tg_tok_per_s,pp_tok_per_s,result_file\n"
+        )
+        summary_csv.write_text(header)
+
+        model_dirs = sorted([d for d in results_dir.iterdir() if d.is_dir()])
+        rebuilt = 0
+        for model_dir in model_dirs:
+            model = model_dir.name
+            draft_n = extract_draft_n(model)
+            for json_file in sorted(model_dir.glob("*.json")):
+                scenario_label = json_file.stem
+                tg, pp = extract_metrics(json_file)
+                sc = _SCENARIO_MAP.get(scenario_label)
+                pp_val = str(sc.pp) if sc else ""
+                tg_val = str(sc.tg) if sc else ""
+                depth_val = str(sc.depth) if sc else ""
+                line = f"{model},{draft_n},{scenario_label},{pp_val},{tg_val},{depth_val},{tg},{pp},{json_file.name}\n"
+                summary_csv.write_text(summary_csv.read_text() + line)
+                rebuilt += 1
+
+        print(f"[ok] Rebuilt {rebuilt} rows in summary.csv")
+        print()
+        print_summary(summary_csv)
+        print()
+        generate_report(results_dir)
+        print()
+        print(f"[ok] Reports regenerated in: {results_dir}/")
+        return
+
+    # Normal mode: run benchmarks
+    if not args.models:
+        raise SystemExit("[fail] --models is required (or use --skip-bench)")
 
     # Parse models
     models = [m.strip() for m in args.models.split(",")]
     validate_models(models)
 
     base_url = f"http://{args.host}:{args.port}/v1"
+
+    # Validate models exist on server before starting
+    validate_models_on_server(models, base_url)
 
     print(f"[bench] Models:          {models}")
     print(f"[bench] Base URL:        {base_url}")

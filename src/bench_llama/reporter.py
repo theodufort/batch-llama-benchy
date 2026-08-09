@@ -171,7 +171,7 @@ def _plot_grouped_bar(
     ax.set_ylabel(ylabel)
     ax.set_title("%s by Scenario" % ylabel)
     ax.legend(fontsize=8)
-    ax.yaxis.set_major_formatter(ticker.StrFormat("%.0f"))
+    ax.yaxis.set_major_formatter(ticker.StrMethodFormatter("%.0f"))
     fig.tight_layout()
     fig.savefig(str(out), dpi=150)
     plt.close(fig)
@@ -209,7 +209,7 @@ def _plot_radar(
     """Normalized radar chart showing relative speed across scenarios."""
     max_vals: dict[str, float] = {}
     for s in scenarios:
-        max_vals[s] = max((data.get((m, s), 0) for m in models), default=1)
+        max_vals[s] = max((data.get((m, s), 0) for m in models), default=1) or 1.0
 
     N = len(scenarios)
     angles = [2 * math.pi * n / N for n in range(N)]
