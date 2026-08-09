@@ -1,9 +1,10 @@
-"""CLI entry point for bench-llama."""
+"""CLI entry point for batch-bench-llama."""
 
 import argparse
 from pathlib import Path
 
 from .config import SCENARIOS, validate_models
+from .reporter import generate_report
 from .runner import run_benchmarks
 
 
@@ -52,6 +53,10 @@ def main():
     # Print summary
     summary_csv = results_dir / "summary.csv"
     print_summary(summary_csv)
+
+    # Generate reports: per-model CSVs, graphs, recommendations
+    print()
+    generate_report(results_dir)
 
     print()
     print(f"[ok] Full results in: {results_dir}/")

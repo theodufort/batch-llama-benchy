@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Benchmark speculative decoding drafts with llama-benchy"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = ["requests>=2.31", "tabulate>=0.9"]
+dependencies = ["requests>=2.31", "tabulate>=0.9", "matplotlib>=3.9"]
 
 [project.scripts]
 batch-bench-llama = "bench_llama.cli:main"
