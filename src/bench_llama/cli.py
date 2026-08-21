@@ -27,7 +27,7 @@ def main():
     )
     parser.add_argument(
         "--models",
-        help="Comma-separated list of model names (at least 2 required)",
+        help="Comma-separated list of model names (at least 1 required)",
     )
     parser.add_argument(
         "--results-dir",

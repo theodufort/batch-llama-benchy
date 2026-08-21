@@ -34,7 +34,7 @@ batch-bench-llama --models MODEL1,MODEL2 [--host HOST] [--port PORT] [--runs N]
 ### Example
 
 ```bash
-batch-bench-llama --models llama-3.1-8b-d3,llama-3.1-8b-d5,llama-3.1-8b-d7 --host 10.0.0.5
+uv run batch-bench-llama --models Qwen3.8-27b-coding-tensor --host 192.168.0.126 --port 8123 --runs 1
 ```
 
 This will:
